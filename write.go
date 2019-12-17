@@ -76,7 +76,7 @@ func (fw *AppendWriter) Sync() error {
 //      4 bytes LE len(data) [1]
 //      4 bytes LE HASH(data)[2] // go-metro
 //      4 bytes MAGIC        [3] // 0xbeef
-//      4 bytes LE HASH(1 2 3)   // the first 12 bytes
+//      4 bytes LE HASH(1 2 3)   // hash of the first 12 bytes
 //   data:
 //      ..
 //      ..
