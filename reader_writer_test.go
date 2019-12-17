@@ -1,4 +1,4 @@
-package append
+package pen
 
 import (
 	"bytes"
@@ -35,11 +35,11 @@ func TestScan(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	fw, err := NewAppendWriter(path.Join(dir, "forward"))
+	fw, err := NewWriter(path.Join(dir, "forward"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, err := NewAppendReader(path.Join(dir, "forward"))
+	reader, err := NewReader(path.Join(dir, "forward"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestReaderCorrupt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reader, err := NewAppendReader(fn)
+	reader, err := NewReader(fn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestReaderCorrupt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fw, err := NewAppendWriter(fn)
+	fw, err := NewWriter(fn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,12 +168,12 @@ func TestErrorOpen(t *testing.T) {
 	}
 	os.RemoveAll(dir)
 
-	_, err = NewAppendWriter(path.Join(dir, "forward"))
+	_, err = NewWriter(path.Join(dir, "forward"))
 	if err == nil {
 		t.Fatal("expected error")
 	}
 
-	_, err = NewAppendReader(path.Join(dir, "forward"))
+	_, err = NewReader(path.Join(dir, "forward"))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -192,11 +192,11 @@ func TestParallel(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
-	fw, err := NewAppendWriter(path.Join(dir, "forward"))
+	fw, err := NewWriter(path.Join(dir, "forward"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, err := NewAppendReader(path.Join(dir, "forward"))
+	reader, err := NewReader(path.Join(dir, "forward"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,12 +251,12 @@ func TestReadWriteBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
-	fw, err := NewAppendWriter(path.Join(dir, "forward"))
+	fw, err := NewWriter(path.Join(dir, "forward"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer fw.Close()
-	reader, err := NewAppendReader(path.Join(dir, "forward"))
+	reader, err := NewReader(path.Join(dir, "forward"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,7 +293,7 @@ func TestHelloWorld(t *testing.T) {
 	defer os.RemoveAll(dir)
 	filename := path.Join(dir, "f")
 
-	w, err := NewAppendWriter(filename)
+	w, err := NewWriter(filename)
 	if err != nil {
 		panic(err)
 	}
@@ -303,7 +303,7 @@ func TestHelloWorld(t *testing.T) {
 		panic(err)
 	}
 
-	r, err := NewAppendReader(filename)
+	r, err := NewReader(filename)
 	if err != nil {
 		panic(err)
 	}

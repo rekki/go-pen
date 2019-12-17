@@ -1,6 +1,6 @@
-## github.com/rekki/go-append: simple file append/read/scan with checksum
+## github.com/rekki/go-pen: simple file append/read/scan with checksum
 
-[![Build Status](https://travis-ci.org/rekki/go-append.svg?branch=master)](https://travis-ci.org/rekki/go-append) [![codecov](https://codecov.io/gh/rekki/go-append/branch/master/graph/badge.svg)](https://codecov.io/gh/rekki/go-append) [![GoDoc](https://godoc.org/github.com/rekki/go-append?status.svg)](https://godoc.org/github.com/rekki/go-append)
+[![Build Status](https://travis-ci.org/rekki/go-append.svg?branch=master)](https://travis-ci.org/rekki/go-append) [![codecov](https://codecov.io/gh/rekki/go-append/branch/master/graph/badge.svg)](https://codecov.io/gh/rekki/go-append) [![GoDoc](https://godoc.org/github.com/rekki/go-pen?status.svg)](https://godoc.org/github.com/rekki/go-pen)
 
 ```
 
@@ -25,15 +25,15 @@ robust.
 
 
 ---
-# append
+# pen
 --
-    import "github.com/rekki/go-append"
+    import "github.com/rekki/go-pen"
 
 Package the provides file append with header and checksum
 
 example usage:
 
-    w, err := NewAppendWriter(filename)
+    w, err := NewWriter(filename)
     if err != nil {
     	panic(err)
     }
@@ -44,7 +44,7 @@ example usage:
     }
 
     // ...
-    r, err := NewAppendReader(filename)
+    r, err := NewReader(filename)
     if err != nil {
     	panic(err)
     }
@@ -95,131 +95,6 @@ func ScanFromReader(reader io.ReaderAt, offset uint32, cb func(uint32, []byte) e
 Scan ReaderAt, if the callback returns error this error is returned as the Scan
 error
 
-#### type AppendReader
-
-```go
-type AppendReader struct {
-}
-```
-
-
-#### func  NewAppendReader
-
-```go
-func NewAppendReader(filename string) (*AppendReader, error)
-```
-Create New AppendReader (you just nice wrapper around ReadFromReader adn
-ScanFromReader) it is *safe* to use it concurrently Example usage
-
-    r, err := NewAppendReader(filename)
-    if err != nil {
-    	panic(err)
-    }
-    // read specific offset
-    data, _, err := r.Read(docID)
-    if err != nil {
-    	panic(err)
-    }
-    // scan from specific offset
-    err = r.Scan(0, func(offset uint32, data []byte) error {
-    	log.Printf("%v",data)
-    	return nil
-    })
-
-#### func (*AppendReader) Close
-
-```go
-func (ar *AppendReader) Close() error
-```
-
-#### func (*AppendReader) Read
-
-```go
-func (ar *AppendReader) Read(offset uint32) ([]byte, uint32, error)
-```
-Read at specific offset (just wrapper around ReadFromReader)
-
-#### func (*AppendReader) Scan
-
-```go
-func (ar *AppendReader) Scan(offset uint32, cb func(uint32, []byte) error) error
-```
-Scan the open file, if the callback returns error this error is returned as the
-Scan error. just a wrapper around ScanFromReader.
-
-#### type AppendWriter
-
-```go
-type AppendWriter struct {
-}
-```
-
-
-#### func  NewAppendWriter
-
-```go
-func NewAppendWriter(filename string) (*AppendWriter, error)
-```
-Creates new writer and seeks to the end The writer is *safe* to be used
-concurrently, because it uses bump pointer like allocation of the offset.
-example usage:
-
-    w, err := NewAppendWriter(filename)
-    if err != nil {
-    	panic(err)
-    }
-
-    docID, err := w.Append([]byte("hello world"))
-    if err != nil {
-    	panic(err)
-    }
-
-    r, err := NewAppendReader(filename)
-    if err != nil {
-    	panic(err)
-    }
-    data, _, err := r.Read(docID)
-    if err != nil {
-    	panic(err)
-    }
-    log.Printf("%s",string(data))
-
-#### func (*AppendWriter) Append
-
-```go
-func (fw *AppendWriter) Append(encoded []byte) (uint32, error)
-```
-Append bytes to the end of file format is:
-
-    16 byte header
-    XX variable length data
-
-    header:
-       4 bytes LE len(data) [1] // LE = Little Endian
-       4 bytes LE HASH(data)[2] // go-metro
-       4 bytes MAGIC        [3] // 0xbeef
-       4 bytes LE HASH(1 2 3)   // hash of the first 12 bytes
-    data:
-       ..
-       ..
-
-Then the blob(header + data) is padded to PAD size using ((uint32(blobSize) +
-PAD - 1) / PAD).
-
-it returns the addressable offset that you can use ReadFromReader() on
-
-#### func (*AppendWriter) Close
-
-```go
-func (fw *AppendWriter) Close() error
-```
-
-#### func (*AppendWriter) Sync
-
-```go
-func (fw *AppendWriter) Sync() error
-```
-
 #### type OffsetWriter
 
 ```go
@@ -268,3 +143,128 @@ Write the offsed and its checksum format is:
 
     8 byte LE offset
     8 byte LE checksum // go-metro(offset bytes)
+
+#### type Reader
+
+```go
+type Reader struct {
+}
+```
+
+
+#### func  NewReader
+
+```go
+func NewReader(filename string) (*Reader, error)
+```
+Create New AppendReader (you just nice wrapper around ReadFromReader adn
+ScanFromReader) it is *safe* to use it concurrently Example usage
+
+    r, err := NewReader(filename)
+    if err != nil {
+    	panic(err)
+    }
+    // read specific offset
+    data, _, err := r.Read(docID)
+    if err != nil {
+    	panic(err)
+    }
+    // scan from specific offset
+    err = r.Scan(0, func(offset uint32, data []byte) error {
+    	log.Printf("%v",data)
+    	return nil
+    })
+
+#### func (*Reader) Close
+
+```go
+func (ar *Reader) Close() error
+```
+
+#### func (*Reader) Read
+
+```go
+func (ar *Reader) Read(offset uint32) ([]byte, uint32, error)
+```
+Read at specific offset (just wrapper around ReadFromReader)
+
+#### func (*Reader) Scan
+
+```go
+func (ar *Reader) Scan(offset uint32, cb func(uint32, []byte) error) error
+```
+Scan the open file, if the callback returns error this error is returned as the
+Scan error. just a wrapper around ScanFromReader.
+
+#### type Writer
+
+```go
+type Writer struct {
+}
+```
+
+
+#### func  NewWriter
+
+```go
+func NewWriter(filename string) (*Writer, error)
+```
+Creates new writer and seeks to the end The writer is *safe* to be used
+concurrently, because it uses bump pointer like allocation of the offset.
+example usage:
+
+    w, err := NewWriter(filename)
+    if err != nil {
+    	panic(err)
+    }
+
+    docID, err := w.Append([]byte("hello world"))
+    if err != nil {
+    	panic(err)
+    }
+
+    r, err := NewReader(filename)
+    if err != nil {
+    	panic(err)
+    }
+    data, _, err := r.Read(docID)
+    if err != nil {
+    	panic(err)
+    }
+    log.Printf("%s",string(data))
+
+#### func (*Writer) Append
+
+```go
+func (fw *Writer) Append(encoded []byte) (uint32, error)
+```
+Append bytes to the end of file format is:
+
+    16 byte header
+    XX variable length data
+
+    header:
+       4 bytes LE len(data) [1] // LE = Little Endian
+       4 bytes LE HASH(data)[2] // go-metro
+       4 bytes MAGIC        [3] // 0xbeef
+       4 bytes LE HASH(1 2 3)   // hash of the first 12 bytes
+    data:
+       ..
+       ..
+
+Then the blob(header + data) is padded to PAD size using ((uint32(blobSize) +
+PAD - 1) / PAD).
+
+it returns the addressable offset that you can use ReadFromReader() on
+
+#### func (*Writer) Close
+
+```go
+func (fw *Writer) Close() error
+```
+
+#### func (*Writer) Sync
+
+```go
+func (fw *Writer) Sync() error
+```

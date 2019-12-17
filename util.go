@@ -1,4 +1,4 @@
-package append
+package pen
 
 import "github.com/dgryski/go-metro"
 

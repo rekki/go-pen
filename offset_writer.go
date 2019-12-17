@@ -1,4 +1,4 @@
-package append
+package pen
 
 import (
 	"encoding/binary"

@@ -1,4 +1,4 @@
-package append
+package pen
 
 import (
 	"bytes"
@@ -10,14 +10,14 @@ import (
 
 var EBADSLT = errors.New("checksum mismatch")
 
-type AppendReader struct {
+type Reader struct {
 	file *os.File
 }
 
 // Create New AppendReader (you just nice wrapper around ReadFromReader adn ScanFromReader)
 // it is *safe* to use it concurrently
 // Example usage
-//	r, err := NewAppendReader(filename)
+//	r, err := NewReader(filename)
 //	if err != nil {
 //		panic(err)
 //	}
@@ -32,28 +32,28 @@ type AppendReader struct {
 //		return nil
 //	})
 //
-func NewAppendReader(filename string) (*AppendReader, error) {
+func NewReader(filename string) (*Reader, error) {
 	fd, err := os.OpenFile(filename, os.O_RDONLY, 0600)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AppendReader{
+	return &Reader{
 		file: fd,
 	}, nil
 }
 
 // Scan the open file, if the callback returns error this error is returned as the Scan error. just a wrapper around ScanFromReader.
-func (ar *AppendReader) Scan(offset uint32, cb func(uint32, []byte) error) error {
+func (ar *Reader) Scan(offset uint32, cb func(uint32, []byte) error) error {
 	return ScanFromReader(ar.file, offset, cb)
 }
 
 // Read at specific offset (just wrapper around ReadFromReader)
-func (ar *AppendReader) Read(offset uint32) ([]byte, uint32, error) {
+func (ar *Reader) Read(offset uint32) ([]byte, uint32, error) {
 	return ReadFromReader(ar.file, offset)
 }
 
-func (ar *AppendReader) Close() error {
+func (ar *Reader) Close() error {
 	return ar.file.Close()
 }
 

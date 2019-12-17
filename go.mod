@@ -1,4 +1,4 @@
-module github.com/rekki/go-append
+module github.com/rekki/go-pen
 
 go 1.13
 

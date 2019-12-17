@@ -1,7 +1,7 @@
 // Package the provides file append with header and checksum
 //
 // example usage:
-//	w, err := NewAppendWriter(filename)
+//	w, err := NewWriter(filename)
 //	if err != nil {
 //		panic(err)
 //	}
@@ -12,7 +12,7 @@
 //	}
 //
 //	// ...
-//	r, err := NewAppendReader(filename)
+//	r, err := NewReader(filename)
 //	if err != nil {
 //		panic(err)
 //	}
@@ -21,4 +21,4 @@
 //		panic(err)
 //	}
 //	log.Printf("%s",string(data))
-package append
+package pen

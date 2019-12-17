@@ -1,4 +1,4 @@
-package append
+package pen
 
 import (
 	"encoding/binary"
@@ -12,7 +12,7 @@ var PAD = uint32(64)
 
 var MAGIC = []byte{0xb, 0xe, 0xe, 0xf} // change it if you wish
 
-type AppendWriter struct {
+type Writer struct {
 	file   *os.File
 	offset uint32
 }
@@ -21,7 +21,7 @@ type AppendWriter struct {
 // The writer is *safe* to be used concurrently, because it uses bump pointer like allocation of the offset.
 // example usage:
 //
-//	w, err := NewAppendWriter(filename)
+//	w, err := NewWriter(filename)
 //	if err != nil {
 //		panic(err)
 //	}
@@ -32,7 +32,7 @@ type AppendWriter struct {
 //	}
 //
 //
-//	r, err := NewAppendReader(filename)
+//	r, err := NewReader(filename)
 //	if err != nil {
 //		panic(err)
 //	}
@@ -42,7 +42,7 @@ type AppendWriter struct {
 //	}
 //	log.Printf("%s",string(data))
 //
-func NewAppendWriter(filename string) (*AppendWriter, error) {
+func NewWriter(filename string) (*Writer, error) {
 	fd, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		return nil, err
@@ -53,17 +53,17 @@ func NewAppendWriter(filename string) (*AppendWriter, error) {
 		return nil, err
 	}
 
-	return &AppendWriter{
+	return &Writer{
 		file:   fd,
 		offset: uint32((off + int64(PAD) - 1) / int64(PAD)),
 	}, nil
 }
 
-func (fw *AppendWriter) Close() error {
+func (fw *Writer) Close() error {
 	return fw.file.Close()
 }
 
-func (fw *AppendWriter) Sync() error {
+func (fw *Writer) Sync() error {
 	return fw.file.Sync()
 }
 
@@ -83,7 +83,7 @@ func (fw *AppendWriter) Sync() error {
 // Then the blob(header + data) is padded to PAD size using ((uint32(blobSize) + PAD - 1) / PAD).
 //
 // it returns the addressable offset that you can use ReadFromReader() on
-func (fw *AppendWriter) Append(encoded []byte) (uint32, error) {
+func (fw *Writer) Append(encoded []byte) (uint32, error) {
 	blobSize := 16 + len(encoded)
 	blob := make([]byte, blobSize)
 	copy(blob[16:], encoded)
