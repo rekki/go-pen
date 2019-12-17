@@ -31,7 +31,7 @@ type AppendWriter struct {
 //		panic(err)
 //	}
 //
-//      // ...
+//
 //	r, err := NewAppendReader(filename)
 //	if err != nil {
 //		panic(err)
@@ -40,7 +40,7 @@ type AppendWriter struct {
 //	if err != nil {
 //		panic(err)
 //	}
-//      log.Printf("%s",string(data))
+//	log.Printf("%s",string(data))
 //
 func NewAppendWriter(filename string) (*AppendWriter, error) {
 	fd, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0600)

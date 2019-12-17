@@ -21,12 +21,12 @@ type AppendReader struct {
 //	if err != nil {
 //		panic(err)
 //	}
-//      // read specific offset
+//	// read specific offset
 //	data, _, err := r.Read(docID)
 //	if err != nil {
 //		panic(err)
 //	}
-//      // scan from specific offset
+//	// scan from specific offset
 //	err = r.Scan(0, func(offset uint32, data []byte) error {
 //		log.Printf("%v",data)
 //		return nil

@@ -89,20 +89,20 @@ func NewAppendReader(filename string) (*AppendReader, error)
 Create New AppendReader (you just nice wrapper around ReadFromReader adn
 ScanFromReader) it is *safe* to use it concurrently Example usage
 
-    	r, err := NewAppendReader(filename)
-    	if err != nil {
-    		panic(err)
-    	}
-         // read specific offset
-    	data, _, err := r.Read(docID)
-    	if err != nil {
-    		panic(err)
-    	}
-         // scan from specific offset
-    	err = r.Scan(0, func(offset uint32, data []byte) error {
-    		log.Printf("%v",data)
-    		return nil
-    	})
+    r, err := NewAppendReader(filename)
+    if err != nil {
+    	panic(err)
+    }
+    // read specific offset
+    data, _, err := r.Read(docID)
+    if err != nil {
+    	panic(err)
+    }
+    // scan from specific offset
+    err = r.Scan(0, func(offset uint32, data []byte) error {
+    	log.Printf("%v",data)
+    	return nil
+    })
 
 #### func (*AppendReader) Close
 
@@ -142,26 +142,25 @@ Creates new writer and seeks to the end The writer is *safe* to be used
 concurrently, because it uses bump pointer like allocation of the offset.
 example usage:
 
-    	w, err := NewAppendWriter(filename)
-    	if err != nil {
-    		panic(err)
-    	}
+    w, err := NewAppendWriter(filename)
+    if err != nil {
+    	panic(err)
+    }
 
-    	docID, err := w.Append([]byte("hello world"))
-    	if err != nil {
-    		panic(err)
-    	}
+    docID, err := w.Append([]byte("hello world"))
+    if err != nil {
+    	panic(err)
+    }
 
-         // ...
-    	r, err := NewAppendReader(filename)
-    	if err != nil {
-    		panic(err)
-    	}
-    	data, _, err := r.Read(docID)
-    	if err != nil {
-    		panic(err)
-    	}
-         log.Printf("%s",string(data))
+    r, err := NewAppendReader(filename)
+    if err != nil {
+    	panic(err)
+    }
+    data, _, err := r.Read(docID)
+    if err != nil {
+    	panic(err)
+    }
+    log.Printf("%s",string(data))
 
 #### func (*AppendWriter) Append
 
