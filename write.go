@@ -73,7 +73,7 @@ func (fw *AppendWriter) Sync() error {
 //   XX variable length data
 //
 //   header:
-//      4 bytes LE len(data) [1]
+//      4 bytes LE len(data) [1] // LE = Little Endian
 //      4 bytes LE HASH(data)[2] // go-metro
 //      4 bytes MAGIC        [3] // 0xbeef
 //      4 bytes LE HASH(1 2 3)   // hash of the first 12 bytes
