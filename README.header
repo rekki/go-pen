@@ -2,4 +2,25 @@
 
 [![Build Status](https://travis-ci.org/rekki/go-append.svg?branch=master)](https://travis-ci.org/rekki/go-append) [![codecov](https://codecov.io/gh/rekki/go-append/branch/master/graph/badge.svg)](https://codecov.io/gh/rekki/go-append) [![GoDoc](https://godoc.org/github.com/rekki/go-append?status.svg)](https://godoc.org/github.com/rekki/go-append)
 
+```
+
+format is:
+  16 byte header
+  data
+  header:
+     4 bytes LE len(data) [1]
+     4 bytes LE HASH(data)[2] // go-metro
+     4 bytes MAGIC        [3] // 0xbeef
+     4 bytes LE HASH(1 2 3)   // the first 12 bytes
+  data:
+     ..
+     ..
+
+```
+
+It has checksum of the data and checksum of the header(also
+checksuming the checksum of the data), which makes it quite safe and
+robust.
+
+
 ---
