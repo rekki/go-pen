@@ -6,7 +6,9 @@
 
 format is:
   16 byte header
-  data
+  XX variable length data
+
+
   header:
      4 bytes LE len(data) [1]
      4 bytes LE HASH(data)[2] // go-metro
@@ -191,7 +193,7 @@ func (fw *AppendWriter) Append(encoded []byte) (uint32, error)
 Append bytes to the end of file format is:
 
     16 byte header
-    data
+    XX variable length data
 
     header:
        4 bytes LE len(data) [1]

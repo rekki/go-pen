@@ -70,7 +70,7 @@ func (fw *AppendWriter) Sync() error {
 // Append bytes to the end of file
 // format is:
 //   16 byte header
-//   data
+//   XX variable length data
 //
 //   header:
 //      4 bytes LE len(data) [1]
