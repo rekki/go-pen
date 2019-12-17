@@ -8,7 +8,6 @@ format is:
   16 byte header
   XX variable length data
 
-
   header:
      4 bytes LE len(data) [1] // LE = Little Endian
      4 bytes LE HASH(data)[2] // go-metro
