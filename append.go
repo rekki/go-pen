@@ -11,7 +11,7 @@
 //		panic(err)
 //	}
 //
-//      // ...
+//	// ...
 //	r, err := NewAppendReader(filename)
 //	if err != nil {
 //		panic(err)
@@ -20,5 +20,5 @@
 //	if err != nil {
 //		panic(err)
 //	}
-//      log.Printf("%s",string(data))
+//	log.Printf("%s",string(data))
 package append
