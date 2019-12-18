@@ -104,61 +104,81 @@ func TestReaderCorrupt(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 	fn := path.Join(dir, "forward")
-	err = ioutil.WriteFile(fn, make([]byte, 1024), 0600)
-	if err != nil {
-		t.Fatal(err)
-	}
+	for i := 0; i < 100; i++ {
+		for j := 0; j < 32; j++ {
 
-	reader, err := NewReader(fn)
-	if err != nil {
-		t.Fatal(err)
-	}
+			randomData := make([]byte, rand.Intn(10240))
+			rand.Read(randomData)
+			validData := make([]byte, 1000+rand.Intn(10240))
+			rand.Read(validData)
 
-	_, _, err = reader.Read(0)
-	if err == nil {
-		t.Fatal("expected error")
-	}
+			file, err := os.OpenFile(fn, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0600)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	// test empty scan of corrupt file
-	err = reader.Scan(0, func(offset uint32, data []byte) error {
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+			fw, err := NewWriter(fn)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	fw, err := NewWriter(fn)
-	if err != nil {
-		t.Fatal(err)
-	}
+			reader, err := NewReader(fn)
+			if err != nil {
+				t.Fatal(err)
+			}
+			off, err := fw.Append(validData)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	dataCase := []byte("abc")
-	off, err := fw.Append(dataCase)
-	if err != nil {
-		t.Fatal(err)
-	}
+			data, _, err := reader.Read(off)
+			if err != nil {
+				t.Fatal("unexpected error")
+			}
 
-	data, _, err := reader.Read(off)
-	if err != nil {
-		t.Fatal("expected error")
-	}
+			if !bytes.Equal(validData, data) {
+				t.Fatal("bytes mismatch")
+			}
+			n := 0
+			err = reader.Scan(0, func(offset uint32, data []byte) error {
+				n++
+				return nil
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if n != 1 {
+				t.Fatal("expected 1")
+			}
 
-	if !bytes.Equal(dataCase, data) {
-		t.Fatal("bytes mismatch")
-	}
-	n := 0
-	err = reader.Scan(0, func(offset uint32, data []byte) error {
-		n++
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != 1 {
-		t.Fatal("expected 1")
-	}
+			// corrupt one byte at a time
+			_, err = file.WriteAt(randomData, int64(j))
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	reader.Close()
+			_, _, err = reader.Read(off)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+
+			n = 0
+			err = reader.Scan(0, func(offset uint32, data []byte) error {
+				n++
+				return nil
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if n != 0 {
+				t.Fatal("expected 0")
+			}
+
+			reader.Close()
+			fw.Close()
+			file.Close()
+		}
+	}
 }
 
 func TestErrorOpen(t *testing.T) {
