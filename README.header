@@ -1,6 +1,6 @@
 ## github.com/rekki/go-pen: simple file append/read/scan with checksum
 
-[![Build Status](https://travis-ci.org/rekki/go-append.svg?branch=master)](https://travis-ci.org/rekki/go-append) [![codecov](https://codecov.io/gh/rekki/go-append/branch/master/graph/badge.svg)](https://codecov.io/gh/rekki/go-append) [![GoDoc](https://godoc.org/github.com/rekki/go-pen?status.svg)](https://godoc.org/github.com/rekki/go-pen)
+[![Build Status](https://travis-ci.org/rekki/go-pen.svg?branch=master)](https://travis-ci.org/rekki/go-pen) [![codecov](https://codecov.io/gh/rekki/go-pen/branch/master/graph/badge.svg)](https://codecov.io/gh/rekki/go-pen) [![GoDoc](https://godoc.org/github.com/rekki/go-pen?status.svg)](https://godoc.org/github.com/rekki/go-pen)
 
 ```
 
