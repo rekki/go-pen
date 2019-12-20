@@ -38,7 +38,7 @@ example usage:
     	panic(err)
     }
 
-    docID, err := w.Append([]byte("hello world"))
+    docID, _, err := w.Append([]byte("hello world"))
     if err != nil {
     	panic(err)
     }
@@ -48,7 +48,7 @@ example usage:
     if err != nil {
     	panic(err)
     }
-    data, _, err := r.Read(docID)
+    data, err := r.Read(docID)
     if err != nil {
     	panic(err)
     }
@@ -186,7 +186,8 @@ func (ar *Reader) Close() error
 ```go
 func (ar *Reader) Read(offset uint32) ([]byte, uint32, error)
 ```
-Read at specific offset (just wrapper around ReadFromReader)
+Read at specific offset (just wrapper around ReadFromReader), returns the data,
+next readable offset and error
 
 #### func (*Reader) Scan
 
@@ -218,7 +219,7 @@ example usage:
     	panic(err)
     }
 
-    docID, err := w.Append([]byte("hello world"))
+    docID, _, err := w.Append([]byte("hello world"))
     if err != nil {
     	panic(err)
     }
@@ -236,7 +237,7 @@ example usage:
 #### func (*Writer) Append
 
 ```go
-func (fw *Writer) Append(encoded []byte) (uint32, error)
+func (fw *Writer) Append(encoded []byte) (uint32, uint32, error)
 ```
 Append bytes to the end of file format is:
 

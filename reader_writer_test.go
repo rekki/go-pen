@@ -24,6 +24,7 @@ func RandStringRunes(n int) string {
 
 type Case struct {
 	id       uint32
+	next     uint32
 	document uint32
 	data     []byte
 }
@@ -58,11 +59,14 @@ func TestScan(t *testing.T) {
 			for i := 0; i < 1000; i++ {
 				data := randomized[i]
 				atomic.AddUint64(&cnt, 1)
-				off, err := fw.Append(data)
+				off, next, err := fw.Append(data)
 				if err != nil {
 					panic(err)
 				}
-				out = append(out, Case{id: uint32(i), document: off, data: data})
+				if next == off {
+					panic("same")
+				}
+				out = append(out, Case{id: uint32(i), document: off, data: data, next: next})
 			}
 			done <- out
 		}()
@@ -73,11 +77,14 @@ func TestScan(t *testing.T) {
 	}
 
 	for _, v := range cases {
-		data, _, err := reader.Read(v.document)
+		data, next, err := reader.Read(v.document)
 		if err != nil {
 			t.Fatal(err)
 		}
 
+		if next != v.next {
+			t.Fatalf("expected %d got %d", v.next, next)
+		}
 		if !bytes.Equal(v.data, data) {
 			t.Fatalf("data mismatch, expected %v got %v", hex.EncodeToString(v.data), hex.EncodeToString(data))
 		}
@@ -126,7 +133,7 @@ func TestReaderCorrupt(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			off, err := fw.Append(validData)
+			off, _, err := fw.Append(validData)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -235,7 +242,7 @@ func TestParallel(t *testing.T) {
 			for i := 0; i < 1000; i++ {
 				data := randomized[i]
 				atomic.AddUint64(&cnt, 1)
-				off, err := fw.Append(data)
+				off, _, err := fw.Append(data)
 				if err != nil {
 					panic(err)
 				}
@@ -286,7 +293,7 @@ func TestReadWriteBasic(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		data := []byte(RandStringRunes(i))
 		atomic.AddUint64(&cnt, 1)
-		off, err := fw.Append(data)
+		off, _, err := fw.Append(data)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -318,7 +325,7 @@ func TestHelloWorld(t *testing.T) {
 		panic(err)
 	}
 
-	id, err := w.Append([]byte("hello world"))
+	id, _, err := w.Append([]byte("hello world"))
 	if err != nil {
 		panic(err)
 	}

@@ -26,7 +26,7 @@ type Writer struct {
 //		panic(err)
 //	}
 //
-//	docID, err := w.Append([]byte("hello world"))
+//	docID, _, err := w.Append([]byte("hello world"))
 //	if err != nil {
 //		panic(err)
 //	}
@@ -83,7 +83,7 @@ func (fw *Writer) Sync() error {
 // Then the blob(header + data) is padded to PAD size using ((uint32(blobSize) + PAD - 1) / PAD).
 //
 // it returns the addressable offset that you can use ReadFromReader() on
-func (fw *Writer) Append(encoded []byte) (uint32, error) {
+func (fw *Writer) Append(encoded []byte) (uint32, uint32, error) {
 	blobSize := 16 + len(encoded)
 	blob := make([]byte, blobSize)
 	copy(blob[16:], encoded)
@@ -99,7 +99,7 @@ func (fw *Writer) Append(encoded []byte) (uint32, error) {
 
 	_, err := fw.file.WriteAt(blob, int64(current*PAD))
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	return uint32(current), nil
+	return uint32(current), current + padded, nil
 }

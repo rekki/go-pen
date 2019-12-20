@@ -6,7 +6,7 @@
 //		panic(err)
 //	}
 //
-//	docID, err := w.Append([]byte("hello world"))
+//	docID, _, err := w.Append([]byte("hello world"))
 //	if err != nil {
 //		panic(err)
 //	}
@@ -16,7 +16,7 @@
 //	if err != nil {
 //		panic(err)
 //	}
-//	data, _, err := r.Read(docID)
+//	data, err := r.Read(docID)
 //	if err != nil {
 //		panic(err)
 //	}

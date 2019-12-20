@@ -48,7 +48,7 @@ func (ar *Reader) Scan(offset uint32, cb func([]byte, uint32, uint32) error) err
 	return ScanFromReader(ar.file, offset, cb)
 }
 
-// Read at specific offset (just wrapper around ReadFromReader)
+// Read at specific offset (just wrapper around ReadFromReader), returns the data, next readable offset and error
 func (ar *Reader) Read(offset uint32) ([]byte, uint32, error) {
 	return ReadFromReader(ar.file, offset)
 }
