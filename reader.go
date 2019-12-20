@@ -27,7 +27,7 @@ type Reader struct {
 //		panic(err)
 //	}
 //	// scan from specific offset
-//	err = r.Scan(0, func(offset uint32, data []byte) error {
+//	err = r.Scan(0, func(data []byte, offset, next uint32) error {
 //		log.Printf("%v",data)
 //		return nil
 //	})
@@ -44,7 +44,7 @@ func NewReader(filename string) (*Reader, error) {
 }
 
 // Scan the open file, if the callback returns error this error is returned as the Scan error. just a wrapper around ScanFromReader.
-func (ar *Reader) Scan(offset uint32, cb func(uint32, []byte) error) error {
+func (ar *Reader) Scan(offset uint32, cb func([]byte, uint32, uint32) error) error {
 	return ScanFromReader(ar.file, offset, cb)
 }
 
@@ -94,7 +94,7 @@ func ReadFromReader(reader io.ReaderAt, offset uint32) ([]byte, uint32, error) {
 }
 
 // Scan ReaderAt, if the callback returns error this error is returned as the Scan error
-func ScanFromReader(reader io.ReaderAt, offset uint32, cb func(uint32, []byte) error) error {
+func ScanFromReader(reader io.ReaderAt, offset uint32, cb func([]byte, uint32, uint32) error) error {
 	for {
 		data, next, err := ReadFromReader(reader, offset)
 		if err == io.EOF {
@@ -108,7 +108,7 @@ func ScanFromReader(reader io.ReaderAt, offset uint32, cb func(uint32, []byte) e
 		if err != nil {
 			return err
 		}
-		err = cb(next, data)
+		err = cb(data, offset, next)
 		if err != nil {
 			return err
 		}

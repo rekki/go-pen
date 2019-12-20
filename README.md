@@ -90,7 +90,7 @@ Scan() helper
 #### func  ScanFromReader
 
 ```go
-func ScanFromReader(reader io.ReaderAt, offset uint32, cb func(uint32, []byte) error) error
+func ScanFromReader(reader io.ReaderAt, offset uint32, cb func([]byte, uint32, uint32) error) error
 ```
 Scan ReaderAt, if the callback returns error this error is returned as the Scan
 error
@@ -170,7 +170,7 @@ ScanFromReader) it is *safe* to use it concurrently Example usage
     	panic(err)
     }
     // scan from specific offset
-    err = r.Scan(0, func(offset uint32, data []byte) error {
+    err = r.Scan(0, func(data []byte, offset, next uint32) error {
     	log.Printf("%v",data)
     	return nil
     })
@@ -191,7 +191,7 @@ Read at specific offset (just wrapper around ReadFromReader)
 #### func (*Reader) Scan
 
 ```go
-func (ar *Reader) Scan(offset uint32, cb func(uint32, []byte) error) error
+func (ar *Reader) Scan(offset uint32, cb func([]byte, uint32, uint32) error) error
 ```
 Scan the open file, if the callback returns error this error is returned as the
 Scan error. just a wrapper around ScanFromReader.

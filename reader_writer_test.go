@@ -83,7 +83,7 @@ func TestScan(t *testing.T) {
 		}
 	}
 	n := uint64(0)
-	err = reader.Scan(0, func(offset uint32, data []byte) error {
+	err = reader.Scan(0, func(data []byte, offset, next uint32) error {
 		n++
 		return nil
 	})
@@ -140,7 +140,7 @@ func TestReaderCorrupt(t *testing.T) {
 				t.Fatal("bytes mismatch")
 			}
 			n := 0
-			err = reader.Scan(0, func(offset uint32, data []byte) error {
+			err = reader.Scan(0, func(data []byte, offset, next uint32) error {
 				n++
 				return nil
 			})
@@ -163,7 +163,7 @@ func TestReaderCorrupt(t *testing.T) {
 			}
 
 			n = 0
-			err = reader.Scan(0, func(offset uint32, data []byte) error {
+			err = reader.Scan(0, func(data []byte, offset, next uint32) error {
 				n++
 				return nil
 			})
