@@ -273,40 +273,43 @@ func TestParallel(t *testing.T) {
 }
 
 func TestReadWriteBasic(t *testing.T) {
-	dir, err := ioutil.TempDir("", "forward")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-	fw, err := NewWriter(path.Join(dir, "forward"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer fw.Close()
-	reader, err := NewReader(path.Join(dir, "forward"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer reader.Close()
-	cnt := uint64(0)
-	cases := []Case{}
-	for i := 0; i < 1000; i++ {
-		data := []byte(RandStringRunes(i))
-		atomic.AddUint64(&cnt, 1)
-		off, _, err := fw.Append(data)
+	for i := 16; i < 40960; i += 10000 {
+		BLOCK_SIZE = i
+		dir, err := ioutil.TempDir("", "forward")
 		if err != nil {
 			t.Fatal(err)
 		}
-		cases = append(cases, Case{id: uint32(i), document: off, data: data})
-	}
+		defer os.RemoveAll(dir)
+		fw, err := NewWriter(path.Join(dir, "forward"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer fw.Close()
+		reader, err := NewReader(path.Join(dir, "forward"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer reader.Close()
+		cnt := uint64(0)
+		cases := []Case{}
+		for i := 0; i < 1000; i++ {
+			data := []byte(RandStringRunes(i))
+			atomic.AddUint64(&cnt, 1)
+			off, _, err := fw.Append(data)
+			if err != nil {
+				t.Fatal(err)
+			}
+			cases = append(cases, Case{id: uint32(i), document: off, data: data})
+		}
 
-	for _, v := range cases {
-		data, _, err := reader.Read(v.document)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !bytes.Equal(v.data, data) {
-			t.Fatalf("data mismatch, expected %v got %v", v.data, data)
+		for _, v := range cases {
+			data, _, err := reader.Read(v.document)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(v.data, data) {
+				t.Fatalf("data mismatch, expected %v got %v", v.data, data)
+			}
 		}
 	}
 }

@@ -10,6 +10,10 @@ import (
 
 var EBADSLT = errors.New("checksum mismatch")
 
+// each ReadFromReader requires 2 syscalls, one to read the header and one to read the data (since the length of the data is in the header)
+// you can reduce that to 1 syscall if your data fits within 1 block, do not set BLOCK_SIZE < 16 because this is the header length
+var BLOCK_SIZE = 4096
+
 type Reader struct {
 	file *os.File
 }
@@ -61,29 +65,43 @@ func (ar *Reader) Close() error {
 // ReadFromReader(nextOffset) if you want to read the next document, or
 // use the Scan() helper
 func ReadFromReader(reader io.ReaderAt, offset uint32) ([]byte, uint32, error) {
-	header := make([]byte, 16)
-	_, err := reader.ReadAt(header, int64(offset*PAD))
-	if err != nil {
+	block := make([]byte, BLOCK_SIZE)
+	// NB: BLOCK_SIZE should not be below 16
+	n, err := reader.ReadAt(block, int64(offset*PAD))
+
+	// end of file, or not enough space to read whole block_size
+	if n < 16 {
 		return nil, 0, err
 	}
+	if n != BLOCK_SIZE {
+		block = block[:n]
+	}
 
+	header := block[:16]
 	if !bytes.Equal(header[8:12], MAGIC) {
 		return nil, 0, EBADSLT
 	}
 
 	computedChecksumHeader := uint32(Hash(header[:12]))
-	checksumHeader := binary.LittleEndian.Uint32(header[12:])
+	checksumHeader := binary.LittleEndian.Uint32(header[12:16])
 	if checksumHeader != computedChecksumHeader {
 		return nil, 0, EBADSLT
 	}
 
 	metadataLen := binary.LittleEndian.Uint32(header)
 	nextOffset := (offset + ((uint32(len(header))+(uint32(metadataLen)))+PAD-1)/PAD)
-	readInto := make([]byte, metadataLen)
-	_, err = reader.ReadAt(readInto, int64(offset*PAD)+int64(len(header)))
-	if err != nil {
-		return nil, 0, err
+
+	var readInto []byte
+	if int(metadataLen) < len(block)-len(header) {
+		readInto = block[len(header) : len(header)+int(metadataLen)]
+	} else {
+		readInto = make([]byte, metadataLen)
+		_, err = reader.ReadAt(readInto, int64(offset*PAD)+int64(len(header)))
+		if err != nil {
+			return nil, 0, err
+		}
 	}
+
 	checksumHeaderData := binary.LittleEndian.Uint32(header[4:])
 	computedChecksumData := uint32(Hash(readInto))
 

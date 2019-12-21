@@ -10,7 +10,8 @@ import (
 // so we just pad things to minimum 64 byte chunks
 var PAD = uint32(64)
 
-var MAGIC = []byte{0xb, 0xe, 0xe, 0xf} // change it if you wish
+// change it if you wish, but has to be 4 bytes
+var MAGIC = []byte{0xb, 0xe, 0xe, 0xf}
 
 type Writer struct {
 	file   *os.File
