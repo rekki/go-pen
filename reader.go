@@ -9,19 +9,17 @@ import (
 )
 
 var EBADSLT = errors.New("checksum mismatch")
-
-// each ReadFromReader requires 2 syscalls, one to read the header and one to read the data (since the length of the data is in the header)
-// you can reduce that to 1 syscall if your data fits within 1 block, do not set BLOCK_SIZE < 16 because this is the header length
-var BLOCK_SIZE = 4096
+var EINVAL = errors.New("invalid argument")
 
 type Reader struct {
-	file *os.File
+	file      *os.File
+	blockSize int
 }
 
 // Create New AppendReader (you just nice wrapper around ReadFromReader adn ScanFromReader)
 // it is *safe* to use it concurrently
 // Example usage
-//	r, err := NewReader(filename)
+//	r, err := NewReader(filename, 4096)
 //	if err != nil {
 //		panic(err)
 //	}
@@ -36,25 +34,36 @@ type Reader struct {
 //		return nil
 //	})
 //
-func NewReader(filename string) (*Reader, error) {
+// each Read requires 2 syscalls, one to read the header and one to read the data (since the length of the data is in the header).
+// You can reduce that to 1 syscall if your data fits within 1 block, do not set blockSize < 16 because this is the header length.
+// blockSize 0 means 16
+func NewReader(filename string, blockSize int) (*Reader, error) {
+	if blockSize == 0 {
+		blockSize = 16
+	}
+	if blockSize < 16 {
+		return nil, EINVAL
+	}
+
 	fd, err := os.OpenFile(filename, os.O_RDONLY, 0600)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Reader{
-		file: fd,
+		file:      fd,
+		blockSize: blockSize,
 	}, nil
 }
 
 // Scan the open file, if the callback returns error this error is returned as the Scan error. just a wrapper around ScanFromReader.
 func (ar *Reader) Scan(offset uint32, cb func([]byte, uint32, uint32) error) error {
-	return ScanFromReader(ar.file, offset, cb)
+	return ScanFromReader(ar.file, offset, ar.blockSize, cb)
 }
 
 // Read at specific offset (just wrapper around ReadFromReader), returns the data, next readable offset and error
 func (ar *Reader) Read(offset uint32) ([]byte, uint32, error) {
-	return ReadFromReader(ar.file, offset)
+	return ReadFromReader(ar.file, offset, ar.blockSize)
 }
 
 func (ar *Reader) Close() error {
@@ -64,16 +73,15 @@ func (ar *Reader) Close() error {
 // Reads specific offset. returns data, nextOffset, error. You can
 // ReadFromReader(nextOffset) if you want to read the next document, or
 // use the Scan() helper
-func ReadFromReader(reader io.ReaderAt, offset uint32) ([]byte, uint32, error) {
-	block := make([]byte, BLOCK_SIZE)
-	// NB: BLOCK_SIZE should not be below 16
+func ReadFromReader(reader io.ReaderAt, offset uint32, blockSize int) ([]byte, uint32, error) {
+	block := make([]byte, blockSize)
 	n, err := reader.ReadAt(block, int64(offset*PAD))
 
 	// end of file, or not enough space to read whole block_size
 	if n < 16 {
 		return nil, 0, err
 	}
-	if n != BLOCK_SIZE {
+	if n != blockSize {
 		block = block[:n]
 	}
 
@@ -112,9 +120,9 @@ func ReadFromReader(reader io.ReaderAt, offset uint32) ([]byte, uint32, error) {
 }
 
 // Scan ReaderAt, if the callback returns error this error is returned as the Scan error
-func ScanFromReader(reader io.ReaderAt, offset uint32, cb func([]byte, uint32, uint32) error) error {
+func ScanFromReader(reader io.ReaderAt, offset uint32, blockSize int, cb func([]byte, uint32, uint32) error) error {
 	for {
-		data, next, err := ReadFromReader(reader, offset)
+		data, next, err := ReadFromReader(reader, offset, blockSize)
 		if err == io.EOF {
 			return nil
 		}

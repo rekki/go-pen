@@ -40,7 +40,7 @@ func TestScan(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, err := NewReader(path.Join(dir, "forward"))
+	reader, err := NewReader(path.Join(dir, "forward"), 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func TestReaderCorrupt(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			reader, err := NewReader(fn)
+			reader, err := NewReader(fn, 1000)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -200,7 +200,7 @@ func TestErrorOpen(t *testing.T) {
 		t.Fatal("expected error")
 	}
 
-	_, err = NewReader(path.Join(dir, "forward"))
+	_, err = NewReader(path.Join(dir, "forward"), 1000)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -223,7 +223,7 @@ func TestParallel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, err := NewReader(path.Join(dir, "forward"))
+	reader, err := NewReader(path.Join(dir, "forward"), 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +274,6 @@ func TestParallel(t *testing.T) {
 
 func TestReadWriteBasic(t *testing.T) {
 	for i := 16; i < 40960; i += 10000 {
-		BLOCK_SIZE = i
 		dir, err := ioutil.TempDir("", "forward")
 		if err != nil {
 			t.Fatal(err)
@@ -285,7 +284,7 @@ func TestReadWriteBasic(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer fw.Close()
-		reader, err := NewReader(path.Join(dir, "forward"))
+		reader, err := NewReader(path.Join(dir, "forward"), i)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -333,7 +332,7 @@ func TestHelloWorld(t *testing.T) {
 		panic(err)
 	}
 
-	r, err := NewReader(filename)
+	r, err := NewReader(filename, 16)
 	if err != nil {
 		panic(err)
 	}
@@ -345,4 +344,23 @@ func TestHelloWorld(t *testing.T) {
 	if !bytes.Equal(data, []byte("hello world")) {
 		panic("mismatch")
 	}
+}
+
+func TestReaderBadArgs(t *testing.T) {
+	filename := "/tmp/non_existing_file_test"
+	_, err := NewReader(filename, 15)
+	if err != EINVAL {
+		panic(err)
+	}
+
+	_, err = NewReader(filename, 16)
+	if !os.IsNotExist(err) {
+		panic(err)
+	}
+
+	_, err = NewReader(filename, 0)
+	if !os.IsNotExist(err) {
+		panic(err)
+	}
+
 }
