@@ -61,9 +61,13 @@ var EBADSLT = errors.New("checksum mismatch")
 ```
 
 ```go
-var MAGIC = []byte{0xb, 0xe, 0xe, 0xf} // change it if you wish
-
+var EINVAL = errors.New("invalid argument")
 ```
+
+```go
+var MAGIC = []byte{0xb, 0xe, 0xe, 0xf}
+```
+change it if you wish, but has to be 4 bytes
 
 ```go
 var PAD = uint32(64)
@@ -81,7 +85,7 @@ exposed go-metro Hash but handy to be exported for debug purposes
 #### func  ReadFromReader
 
 ```go
-func ReadFromReader(reader io.ReaderAt, offset uint32) ([]byte, uint32, error)
+func ReadFromReader(reader io.ReaderAt, offset uint32, blockSize int) ([]byte, uint32, error)
 ```
 Reads specific offset. returns data, nextOffset, error. You can
 ReadFromReader(nextOffset) if you want to read the next document, or use the
@@ -90,7 +94,7 @@ Scan() helper
 #### func  ScanFromReader
 
 ```go
-func ScanFromReader(reader io.ReaderAt, offset uint32, cb func([]byte, uint32, uint32) error) error
+func ScanFromReader(reader io.ReaderAt, offset uint32, blockSize int, cb func([]byte, uint32, uint32) error) error
 ```
 Scan ReaderAt, if the callback returns error this error is returned as the Scan
 error
@@ -155,12 +159,12 @@ type Reader struct {
 #### func  NewReader
 
 ```go
-func NewReader(filename string) (*Reader, error)
+func NewReader(filename string, blockSize int) (*Reader, error)
 ```
 Create New AppendReader (you just nice wrapper around ReadFromReader adn
 ScanFromReader) it is *safe* to use it concurrently Example usage
 
-    r, err := NewReader(filename)
+    r, err := NewReader(filename, 4096)
     if err != nil {
     	panic(err)
     }
@@ -174,6 +178,11 @@ ScanFromReader) it is *safe* to use it concurrently Example usage
     	log.Printf("%v",data)
     	return nil
     })
+
+each Read requires 2 syscalls, one to read the header and one to read the data
+(since the length of the data is in the header). You can reduce that to 1
+syscall if your data fits within 1 block, do not set blockSize < 16 because this
+is the header length. blockSize 0 means 16
 
 #### func (*Reader) Close
 
