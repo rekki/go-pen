@@ -44,7 +44,7 @@ example usage:
     }
 
     // ...
-    r, err := NewReader(filename)
+    r, err := NewReader(filename, 4096)
     if err != nil {
     	panic(err)
     }
@@ -233,7 +233,7 @@ example usage:
     	panic(err)
     }
 
-    r, err := NewReader(filename)
+    r, err := NewReader(filename, 4096)
     if err != nil {
     	panic(err)
     }
