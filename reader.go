@@ -49,6 +49,16 @@ func NewReader(filename string, blockSize int) (*Reader, error) {
 	if err != nil {
 		return nil, err
 	}
+	return NewReaderFromFile(fd, blockSize)
+}
+
+func NewReaderFromFile(fd *os.File, blockSize int) (*Reader, error) {
+	if blockSize == 0 {
+		blockSize = 16
+	}
+	if blockSize < 16 {
+		return nil, EINVAL
+	}
 
 	return &Reader{
 		file:      fd,

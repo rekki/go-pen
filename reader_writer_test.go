@@ -362,5 +362,4 @@ func TestReaderBadArgs(t *testing.T) {
 	if !os.IsNotExist(err) {
 		panic(err)
 	}
-
 }

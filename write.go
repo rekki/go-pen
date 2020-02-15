@@ -48,7 +48,10 @@ func NewWriter(filename string) (*Writer, error) {
 	if err != nil {
 		return nil, err
 	}
+	return NewWriterFromFile(fd)
+}
 
+func NewWriterFromFile(fd *os.File) (*Writer, error) {
 	off, err := fd.Seek(0, os.SEEK_END)
 	if err != nil {
 		return nil, err
