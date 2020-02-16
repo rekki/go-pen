@@ -65,6 +65,10 @@ var EINVAL = errors.New("invalid argument")
 ```
 
 ```go
+var EOVERFLOW = errors.New("you can only overwrite with smaller or equal size")
+```
+
+```go
 var MAGIC = []byte{0xb, 0xe, 0xe, 0xf}
 ```
 change it if you wish, but has to be 4 bytes
@@ -184,6 +188,12 @@ each Read requires 2 syscalls, one to read the header and one to read the data
 syscall if your data fits within 1 block, do not set blockSize < 16 because this
 is the header length. blockSize 0 means 16
 
+#### func  NewReaderFromFile
+
+```go
+func NewReaderFromFile(fd *os.File, blockSize int) (*Reader, error)
+```
+
 #### func (*Reader) Close
 
 ```go
@@ -243,6 +253,12 @@ example usage:
     }
     log.Printf("%s",string(data))
 
+#### func  NewWriterFromFile
+
+```go
+func NewWriterFromFile(fd *os.File) (*Writer, error)
+```
+
 #### func (*Writer) Append
 
 ```go
@@ -272,6 +288,14 @@ it returns the addressable offset that you can use ReadFromReader() on
 ```go
 func (fw *Writer) Close() error
 ```
+
+#### func (*Writer) Overwrite
+
+```go
+func (fw *Writer) Overwrite(offset uint32, encoded []byte) error
+```
+Overwrite specific offset, if the new data is bigger than old data it will
+return EOVERFLOW
 
 #### func (*Writer) Sync
 
