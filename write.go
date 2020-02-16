@@ -2,9 +2,12 @@ package pen
 
 import (
 	"encoding/binary"
+	"errors"
 	"os"
 	"sync/atomic"
 )
+
+var EOVERFLOW = errors.New("you can only overwrite with smaller or equal size")
 
 // the offsets are 32 bit, but usually you want to store more than 4gb of data
 // so we just pad things to minimum 64 byte chunks
@@ -106,4 +109,29 @@ func (fw *Writer) Append(encoded []byte) (uint32, uint32, error) {
 		return 0, 0, err
 	}
 	return uint32(current), current + padded, nil
+}
+
+// Overwrite specific offset, if the new data is bigger than old data it will return EOVERFLOW
+func (fw *Writer) Overwrite(offset uint32, encoded []byte) error {
+	data, _, err := ReadFromReader(fw.file, offset, 16)
+	if err != nil {
+		return err
+	}
+	if len(data) < len(encoded) {
+		return EOVERFLOW
+	}
+
+	blobSize := 16 + len(encoded)
+	blob := make([]byte, blobSize)
+	copy(blob[16:], encoded)
+	binary.LittleEndian.PutUint32(blob[0:], uint32(len(encoded)))
+	binary.LittleEndian.PutUint32(blob[4:], uint32(Hash(encoded)))
+	copy(blob[8:], MAGIC)
+	binary.LittleEndian.PutUint32(blob[12:], uint32(Hash(blob[:12])))
+
+	_, err = fw.file.WriteAt(blob, int64(offset*PAD))
+	if err != nil {
+		return err
+	}
+	return nil
 }

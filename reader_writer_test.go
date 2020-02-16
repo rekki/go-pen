@@ -346,6 +346,62 @@ func TestHelloWorld(t *testing.T) {
 	}
 }
 
+func TestOverwrite(t *testing.T) {
+	// used by the docs
+	dir, err := ioutil.TempDir("", "forward")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	filename := path.Join(dir, "f")
+
+	w, err := NewWriter(filename)
+	if err != nil {
+		panic(err)
+	}
+
+	r, err := NewReader(filename, 0)
+	if err != nil {
+		panic(err)
+	}
+
+	for i := 1; i < 1000; i++ {
+		v := RandStringRunes(i)
+		id, _, err := w.Append([]byte(v))
+		if err != nil {
+			panic(err)
+		}
+
+		data, _, err := r.Read(id)
+		if err != nil {
+			panic(err)
+		}
+
+		if !bytes.Equal(data, []byte(v)) {
+			panic("mismatch")
+		}
+
+		err = w.Overwrite(id, []byte(v+"a"))
+		if err != EOVERFLOW {
+			panic("expected EOVERFLOW")
+		}
+
+		err = w.Overwrite(id, []byte(v[:len(v)-1]))
+		if err != nil {
+			panic(err)
+		}
+
+		data, _, err = r.Read(id)
+		if err != nil {
+			panic(err)
+		}
+
+		if !bytes.Equal(data, []byte(v[:len(v)-1])) {
+			panic("mismatch")
+		}
+	}
+}
+
 func TestReaderBadArgs(t *testing.T) {
 	filename := "/tmp/non_existing_file_test"
 	_, err := NewReader(filename, 15)
