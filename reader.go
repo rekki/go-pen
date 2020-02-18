@@ -1,8 +1,6 @@
 package pen
 
 import (
-	"bytes"
-	"encoding/binary"
 	"errors"
 	"io"
 	"os"
@@ -84,49 +82,12 @@ func (ar *Reader) Close() error {
 // ReadFromReader(nextOffset) if you want to read the next document, or
 // use the Scan() helper
 func ReadFromReader(reader io.ReaderAt, offset uint32, blockSize int) ([]byte, uint32, error) {
-	block := make([]byte, blockSize)
-	n, err := reader.ReadAt(block, int64(offset*PAD))
-
-	// end of file, or not enough space to read whole block_size
-	if n < 16 {
+	b, err := ReadFromReader64(reader, uint64(offset*PAD), blockSize)
+	if err != nil {
 		return nil, 0, err
 	}
-	if n != blockSize {
-		block = block[:n]
-	}
-
-	header := block[:16]
-	if !bytes.Equal(header[8:12], MAGIC) {
-		return nil, 0, EBADSLT
-	}
-
-	computedChecksumHeader := uint32(Hash(header[:12]))
-	checksumHeader := binary.LittleEndian.Uint32(header[12:16])
-	if checksumHeader != computedChecksumHeader {
-		return nil, 0, EBADSLT
-	}
-
-	metadataLen := binary.LittleEndian.Uint32(header)
-	nextOffset := (offset + ((uint32(len(header))+(uint32(metadataLen)))+PAD-1)/PAD)
-
-	var readInto []byte
-	if int(metadataLen) < len(block)-len(header) {
-		readInto = block[len(header) : len(header)+int(metadataLen)]
-	} else {
-		readInto = make([]byte, metadataLen)
-		_, err = reader.ReadAt(readInto, int64(offset*PAD)+int64(len(header)))
-		if err != nil {
-			return nil, 0, err
-		}
-	}
-
-	checksumHeaderData := binary.LittleEndian.Uint32(header[4:])
-	computedChecksumData := uint32(Hash(readInto))
-
-	if checksumHeaderData != computedChecksumData {
-		return nil, 0, EBADSLT
-	}
-	return readInto, nextOffset, nil
+	nextOffset := (offset + ((uint32(16+len(b)))+PAD-1)/PAD)
+	return b, uint32(nextOffset), nil
 }
 
 // Scan ReaderAt, if the callback returns error this error is returned as the Scan error

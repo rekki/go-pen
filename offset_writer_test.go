@@ -68,7 +68,7 @@ func TestFileOffsetCorrupt(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = ow.ReadOrDefault(2)
-	if err == nil {
-		t.Fatal("expected error")
+	if err != nil {
+		t.Fatal("unexpected error")
 	}
 }

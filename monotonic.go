@@ -4,13 +4,14 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"sync/atomic"
 )
 
 type Monotonic struct {
-	indexFD *os.File
-	dataFD  *os.File
-	index   *Writer
-	data    *Writer
+	indexFD           *os.File
+	dataFD            *os.File
+	current           uint64
+	currentDataOffset uint64
 }
 
 func NewMonotonic(fn string) (*Monotonic, error) {
@@ -28,36 +29,52 @@ func NewMonotonic(fn string) (*Monotonic, error) {
 
 }
 func NewMonotonicFromFile(indexFD, dataFD *os.File) (*Monotonic, error) {
-	index, err := NewWriterFromFile(indexFD)
+	currentDataOffset, err := dataFD.Seek(0, os.SEEK_END)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := NewWriterFromFile(dataFD)
+	current, err := FixedLen(indexFD, 8)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Monotonic{indexFD: indexFD, dataFD: dataFD, index: index, data: data}, nil
+	return &Monotonic{indexFD: indexFD, dataFD: dataFD, currentDataOffset: uint64(currentDataOffset), current: current}, nil
 }
 
-func (m *Monotonic) Append(b []byte) (uint32, error) {
+func (m *Monotonic) AppendAt(index uint64, b []byte) error {
 	// append in data
-	offset, _, err := m.data.Append(b)
-	if err != nil {
-		return 0, err
-	}
-	o := make([]byte, 4)
-	binary.LittleEndian.PutUint32(o, uint32(offset))
+	actualSize := len(b) + 16
 
-	id, _, err := m.index.Append(o)
+	currentDataOffset := atomic.AddUint64(&m.currentDataOffset, uint64(actualSize))
+	currentDataOffset -= uint64(actualSize)
+
+	err := WriteAtWriter64(m.dataFD, currentDataOffset, b)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return uint32(id), nil
+
+	o := make([]byte, 8)
+	binary.LittleEndian.PutUint64(o, currentDataOffset)
+
+	err = FixedWriteAt(m.indexFD, index, o)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (m *Monotonic) MustAppend(b []byte) uint32 {
+func (m *Monotonic) Append(b []byte) (uint64, error) {
+	current := atomic.AddUint64(&m.current, 1)
+	current--
+	err := m.AppendAt(current, b)
+	if err != nil {
+		return 0, err
+	}
+	return current, nil
+}
+
+func (m *Monotonic) MustAppend(b []byte) uint64 {
 	d, err := m.Append(b)
 	if err != nil {
 		panic(err)
@@ -65,7 +82,7 @@ func (m *Monotonic) MustAppend(b []byte) uint32 {
 	return d
 }
 
-func (m *Monotonic) MustRead(id uint32) []byte {
+func (m *Monotonic) MustRead(id uint64) []byte {
 	d, err := m.Read(id)
 	if err != nil {
 		panic(err)
@@ -73,14 +90,14 @@ func (m *Monotonic) MustRead(id uint32) []byte {
 	return d
 }
 
-func (m *Monotonic) Read(id uint32) ([]byte, error) {
-	// PAD shoud fit 16 + 4
-	o, _, err := ReadFromReader(m.indexFD, id, 16+4)
+func (m *Monotonic) Read(id uint64) ([]byte, error) {
+	o := make([]byte, 8)
+	err := FixedReadAt(m.indexFD, id, o)
 	if err != nil {
 		return nil, err
 	}
-	off := binary.LittleEndian.Uint32(o)
-	data, _, err := ReadFromReader(m.dataFD, off, 16)
+	off := binary.LittleEndian.Uint64(o)
+	data, err := ReadFromReader64(m.dataFD, off, 16)
 	if err != nil {
 		return nil, err
 	}
@@ -88,16 +105,11 @@ func (m *Monotonic) Read(id uint32) ([]byte, error) {
 	return data, nil
 }
 
-func (m *Monotonic) Count() (uint32, error) {
-	s, err := m.indexFD.Stat()
-	if err != nil {
-		return 0, err
-	}
-
-	return uint32((s.Size() + int64(PAD) - 1) / int64(PAD)), nil
+func (m *Monotonic) Count() (uint64, error) {
+	return FixedLen(m.indexFD, 8)
 }
 
-func (m *Monotonic) MustCount() uint32 {
+func (m *Monotonic) MustCount() uint64 {
 	d, err := m.Count()
 	if err != nil {
 		panic(err)
@@ -106,8 +118,8 @@ func (m *Monotonic) MustCount() uint32 {
 }
 
 func (m *Monotonic) Sync() error {
-	err1 := m.data.Sync()
-	err2 := m.index.Sync()
+	err1 := m.dataFD.Sync()
+	err2 := m.indexFD.Sync()
 
 	if err1 != nil {
 		return err1
@@ -119,8 +131,8 @@ func (m *Monotonic) Sync() error {
 
 }
 func (m *Monotonic) Close() error {
-	err1 := m.data.Close()
-	err2 := m.index.Close()
+	err1 := m.dataFD.Close()
+	err2 := m.indexFD.Close()
 
 	if err1 != nil {
 		return err1

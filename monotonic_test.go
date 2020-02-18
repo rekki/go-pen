@@ -23,7 +23,7 @@ func TestMonotonic(t *testing.T) {
 		t.Fatalf("expected 0, got: %v", m.MustCount())
 	}
 
-	for i := uint32(0); i < 1000; i++ {
+	for i := uint64(0); i < 1000; i++ {
 		data := []byte(RandStringRunes(int(i)))
 		if m.MustCount() != i {
 			t.Fatalf("expected %d got %d", i, m.MustCount())
