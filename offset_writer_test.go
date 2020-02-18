@@ -18,10 +18,7 @@ func TestOffsetWriter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v, err := ow.ReadOrDefault(2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	v := ow.ReadOrDefault(2)
 
 	if v != 2 {
 		t.Fatal("expected 2")
@@ -33,10 +30,7 @@ func TestOffsetWriter(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		v, err = ow.ReadOrDefault(2)
-		if err != nil {
-			t.Fatal(err)
-		}
+		v = ow.ReadOrDefault(2)
 		if v != int64(i) {
 			t.Fatalf("got %d expected %d", v, i)
 		}
@@ -67,8 +61,8 @@ func TestFileOffsetCorrupt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = ow.ReadOrDefault(2)
-	if err != nil {
-		t.Fatal("unexpected error")
+	v := ow.ReadOrDefault(2)
+	if v != 2 {
+		t.Fatal("expected 2")
 	}
 }

@@ -36,7 +36,7 @@ func (ow *OffsetWriter) Close() error {
 }
 
 // Read the offset or if empty/corrupt/not existant return default value
-func (ow *OffsetWriter) ReadOrDefault(def int64) (int64, error) {
+func (ow *OffsetWriter) ReadOrDefault(def int64) int64 {
 	storedOffset := make([]byte, 8)
 	var offset int64
 	err := FixedReadAt(ow.fd, 0, storedOffset)
@@ -45,7 +45,7 @@ func (ow *OffsetWriter) ReadOrDefault(def int64) (int64, error) {
 	} else {
 		offset = int64(binary.LittleEndian.Uint64(storedOffset))
 	}
-	return offset, nil
+	return offset
 }
 
 // Write the offsed and its checksum
