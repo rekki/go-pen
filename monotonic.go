@@ -3,6 +3,7 @@ package pen
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
 	"os"
 	"sync/atomic"
 )
@@ -73,6 +74,21 @@ func (m *Monotonic) Append(b []byte) (uint64, error) {
 		return 0, err
 	}
 	return current, nil
+}
+
+func (m *Monotonic) Last() ([]byte, error) {
+	if m.current == 0 {
+		return nil, io.EOF
+	}
+	return m.Read(m.current - 1)
+}
+
+func (m *Monotonic) MustLast() []byte {
+	b, err := m.Read(m.current - 1)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 func (m *Monotonic) MustAppend(b []byte) uint64 {

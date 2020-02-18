@@ -40,6 +40,11 @@ func TestMonotonicTruncate(t *testing.T) {
 			t.Fatalf("bad read i: %d, got %v expected %v", i, r, data)
 		}
 
+		r = m.MustLast()
+		if !bytes.Equal(r, data) {
+			t.Fatalf("bad read i: %d, got %v expected %v", i, r, data)
+		}
+
 		for j := uint64(1); j < 10; j++ {
 			xid := m.MustAppend(data)
 			if xid != i+j {
