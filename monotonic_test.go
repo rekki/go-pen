@@ -57,6 +57,11 @@ func TestMonotonicTruncate(t *testing.T) {
 			panic(err)
 		}
 
+		r = m.MustLast()
+		if !bytes.Equal(r, data) {
+			t.Fatalf("bad read i: %d, got %v expected %v", i, r, data)
+		}
+
 		if m.MustCount() != i+1 {
 			t.Fatalf("%d: expected %d got %d", i, i+1, m.MustCount())
 		}
