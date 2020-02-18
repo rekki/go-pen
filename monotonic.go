@@ -153,16 +153,8 @@ func (m *Monotonic) Read(id uint64) ([]byte, error) {
 	return data, nil
 }
 
-func (m *Monotonic) Count() (uint64, error) {
-	return FixedLen(m.indexFD, 8)
-}
-
-func (m *Monotonic) MustCount() uint64 {
-	d, err := m.Count()
-	if err != nil {
-		panic(err)
-	}
-	return d
+func (m *Monotonic) Count() uint64 {
+	return m.current
 }
 
 func (m *Monotonic) Sync() error {

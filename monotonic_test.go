@@ -22,8 +22,8 @@ func TestMonotonicTruncate(t *testing.T) {
 
 	for i := uint64(0); i < 100; i++ {
 		data := []byte(RandStringRunes(int(i)))
-		if m.MustCount() != i {
-			t.Fatalf("expected %d got %d", i, m.MustCount())
+		if m.Count() != i {
+			t.Fatalf("expected %d got %d", i, m.Count())
 		}
 
 		id := m.MustAppend(data)
@@ -31,8 +31,8 @@ func TestMonotonicTruncate(t *testing.T) {
 			t.Fatalf("expected %d got %d", i, id)
 		}
 
-		if m.MustCount() != i+1 {
-			t.Fatalf("%d: expected %d got %d", i, i+1, m.MustCount())
+		if m.Count() != i+1 {
+			t.Fatalf("%d: expected %d got %d", i, i+1, m.Count())
 		}
 
 		r := m.MustRead(i)
@@ -62,8 +62,8 @@ func TestMonotonicTruncate(t *testing.T) {
 			t.Fatalf("bad read i: %d, got %v expected %v", i, r, data)
 		}
 
-		if m.MustCount() != i+1 {
-			t.Fatalf("%d: expected %d got %d", i, i+1, m.MustCount())
+		if m.Count() != i+1 {
+			t.Fatalf("%d: expected %d got %d", i, i+1, m.Count())
 		}
 
 	}
@@ -85,22 +85,22 @@ func TestMonotonic(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	if m.MustCount() != 0 {
-		t.Fatalf("expected 0, got: %v", m.MustCount())
+	if m.Count() != 0 {
+		t.Fatalf("expected 0, got: %v", m.Count())
 	}
 
 	for i := uint64(0); i < 1000; i++ {
 		data := []byte(RandStringRunes(int(i)))
-		if m.MustCount() != i {
-			t.Fatalf("expected %d got %d", i, m.MustCount())
+		if m.Count() != i {
+			t.Fatalf("expected %d got %d", i, m.Count())
 		}
 		id := m.MustAppend(data)
 		if id != i {
 			t.Fatalf("expected %d got %d", i, id)
 		}
 
-		if m.MustCount() != i+1 {
-			t.Fatalf("%d: expected %d got %d", i, i+1, m.MustCount())
+		if m.Count() != i+1 {
+			t.Fatalf("%d: expected %d got %d", i, i+1, m.Count())
 		}
 
 		r := m.MustRead(i)
