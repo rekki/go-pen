@@ -113,9 +113,9 @@ func TestReaderCorrupt(t *testing.T) {
 	fn := path.Join(dir, "forward")
 	for i := 0; i < 100; i++ {
 		for j := 0; j < 32; j++ {
-			randomData := make([]byte, rand.Intn(1+10240))
+			randomData := make([]byte, 1+rand.Intn(10240))
 			rand.Read(randomData)
-			validData := make([]byte, 1000+rand.Intn(1+10240))
+			validData := make([]byte, 1000+rand.Intn(10240))
 			rand.Read(validData)
 
 			file, err := os.OpenFile(fn, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0600)

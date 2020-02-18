@@ -28,6 +28,7 @@ func NewMonotonic(fn string) (*Monotonic, error) {
 	return NewMonotonicFromFile(indexFD, dataFD)
 
 }
+
 func NewMonotonicFromFile(indexFD, dataFD *os.File) (*Monotonic, error) {
 	currentDataOffset, err := dataFD.Seek(0, os.SEEK_END)
 	if err != nil {
@@ -88,6 +89,37 @@ func (m *Monotonic) MustRead(id uint64) []byte {
 		panic(err)
 	}
 	return d
+}
+
+// This function is super racy, if you are going to use it protect the whole Monotonic object with a lock
+// it truncates two files the requested id
+func (m *Monotonic) TruncateAt(id uint64) error {
+	o := make([]byte, 8)
+	err := FixedReadAt(m.indexFD, id, o)
+	if err != nil {
+		return err
+	}
+	dataOffset := binary.LittleEndian.Uint64(o)
+	data, err := ReadFromReader64(m.dataFD, dataOffset, 16)
+	if err != nil {
+		return err
+	}
+
+	atomic.StoreUint64(&m.current, id)
+	atomic.StoreUint64(&m.currentDataOffset, dataOffset+16+uint64(len(data)))
+
+	err = m.indexFD.Truncate(int64(id) * int64(8+8)) // 8 header 8 data
+	if err != nil {
+		return err
+	}
+	// now it is safe to trucate the data
+
+	err = m.dataFD.Truncate(int64(dataOffset + 16 + uint64(len(data))))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m *Monotonic) Read(id uint64) ([]byte, error) {

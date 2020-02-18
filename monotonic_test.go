@@ -8,6 +8,62 @@ import (
 	"testing"
 )
 
+func TestMonotonicTruncate(t *testing.T) {
+	dir, err := ioutil.TempDir("", "forwardzz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	m, err := NewMonotonic(path.Join(dir, "a"))
+	if err != nil {
+		panic(err)
+	}
+
+	for i := uint64(0); i < 100; i++ {
+		data := []byte(RandStringRunes(int(i)))
+		if m.MustCount() != i {
+			t.Fatalf("expected %d got %d", i, m.MustCount())
+		}
+
+		id := m.MustAppend(data)
+		if id != i {
+			t.Fatalf("expected %d got %d", i, id)
+		}
+
+		if m.MustCount() != i+1 {
+			t.Fatalf("%d: expected %d got %d", i, i+1, m.MustCount())
+		}
+
+		r := m.MustRead(i)
+		if !bytes.Equal(r, data) {
+			t.Fatalf("bad read i: %d, got %v expected %v", i, r, data)
+		}
+
+		for j := uint64(1); j < 10; j++ {
+			xid := m.MustAppend(data)
+			if xid != i+j {
+				t.Fatalf("i: %d, expected %d got %d", i, i+j, xid)
+			}
+		}
+
+		err = m.TruncateAt(id + 1)
+		if err != nil {
+			panic(err)
+		}
+
+		if m.MustCount() != i+1 {
+			t.Fatalf("%d: expected %d got %d", i, i+1, m.MustCount())
+		}
+
+	}
+
+	err = m.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestMonotonic(t *testing.T) {
 	dir, err := ioutil.TempDir("", "forwardzz")
 	if err != nil {
