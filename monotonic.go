@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sync/atomic"
 )
 
+// completely thread unsafe
+// lock accordingly
 type Monotonic struct {
 	indexFD           *os.File
 	dataFD            *os.File
@@ -48,8 +49,12 @@ func (m *Monotonic) AppendAt(index uint64, b []byte) error {
 	// append in data
 	actualSize := len(b) + 16
 
-	currentDataOffset := atomic.AddUint64(&m.currentDataOffset, uint64(actualSize))
-	currentDataOffset -= uint64(actualSize)
+	currentDataOffset := m.currentDataOffset
+	m.currentDataOffset += uint64(actualSize)
+
+	if index > m.current {
+		m.current = index
+	}
 
 	err := WriteAtWriter64(m.dataFD, currentDataOffset, b)
 	if err != nil {
@@ -67,8 +72,8 @@ func (m *Monotonic) AppendAt(index uint64, b []byte) error {
 }
 
 func (m *Monotonic) Append(b []byte) (uint64, error) {
-	current := atomic.AddUint64(&m.current, 1)
-	current--
+	current := m.current
+	m.current++
 	err := m.AppendAt(current, b)
 	if err != nil {
 		return 0, err
@@ -121,8 +126,8 @@ func (m *Monotonic) TruncateAt(id uint64) error {
 		return err
 	}
 
-	atomic.StoreUint64(&m.current, id)
-	atomic.StoreUint64(&m.currentDataOffset, dataOffset+16+uint64(len(data)))
+	m.current = id
+	m.currentDataOffset = dataOffset + 16 + uint64(len(data))
 
 	err = m.indexFD.Truncate(int64(id) * int64(8+8)) // 8 header 8 data
 	if err != nil {
